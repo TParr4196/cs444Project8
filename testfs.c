@@ -6,6 +6,8 @@
 
 #ifdef CTEST_ENABLE
 
+#define BLOCK_SIZE 4096
+
 void test_image_open(void){
     CTEST_ASSERT(image_open("image.txt",0)>=0, "image_open returns file descriptor");
 }
@@ -15,14 +17,14 @@ void test_image_close(void){
 }
 
 void test_bread_bwrite(void){
-    unsigned char block_map[4096]={1,1,1,1,1,1};
+    unsigned char block_map[BLOCK_SIZE]={1,1,1,1,1,1};
     bwrite(2,block_map);
-    unsigned char buffer[4096]={0};
+    unsigned char buffer[BLOCK_SIZE]={0};
     CTEST_ASSERT(*bread(2,buffer)==*block_map, "bwrite fills buffer with disk image and bread was successful");
 }
 
 void test_alloc(void){
-    unsigned char block[4096]={0};
+    unsigned char block[BLOCK_SIZE]={0};
     for(int i=0; i<BLOCK_SIZE; i++){
         block[i]=0xff;
     }
@@ -58,7 +60,7 @@ void test_set_free(void){
 }
 
 void test_find_free(void){
-    unsigned char block[4096]={0};
+    unsigned char block[BLOCK_SIZE]={0};
     for(int i=0; i<BLOCK_SIZE; i++){
         block[i]=0xff;
     }
@@ -78,7 +80,7 @@ void test_find_free(void){
 }
 
 void test_ialloc(void){
-    unsigned char block[4096]={0};
+    unsigned char block[BLOCK_SIZE]={0};
     for(int i=0; i<BLOCK_SIZE; i++){
         block[i]=0xff;
     }

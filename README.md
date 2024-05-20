@@ -9,13 +9,15 @@
 `testfs.c`: Project 3 of cs444 designed to explore use of semaphores through producer/consumer threads.
 `block.c`: defines functions to read and write to and from buffers and the disk
 `image.c`: defines functionalilty to open, close, and store a global file descriptor representing a disk
-`inode.c`: 
+`inode.c`: defines functionality for inode creation and management
+`pack.h`: read and write 1, 2, or 4 bytes from a pointer
 `free.c`: contains functions to set or find individual free bits in a block
 `block.h`: header file for block.c
 `image.h`: header file for image.c
 `ctest.h`: header file for Beej's Test Code
 `inode.h`: header file for inode.c
 `free.h`: header file for free.c
+`pack.h`: header file for pack.c
 
 ## Data
 makes use of reading and writing to a text file in order to help simulate management of a disk on a computer. 
