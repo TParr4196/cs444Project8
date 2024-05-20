@@ -109,6 +109,22 @@ void test_incore_find_free(void){
     CTEST_ASSERT(incore_find_free()==test_inode, "all_used and free_all working");
 }
 
+void test_incore_find(void){
+    struct inode *test_inode=incore_find_free();
+    test_inode->inode_num=10;
+    CTEST_ASSERT(incore_find(10)==test_inode, "finds a given inode_num");
+    test_inode->ref_count=1;
+    CTEST_ASSERT(incore_find(10)==NULL, "returns NULL if inode_num in use");
+    test_inode=incore_find_free();
+    test_inode->inode_num=10;
+    CTEST_ASSERT(incore_find(10)==test_inode, "returns free inode_num");
+    incore_all_used();
+    CTEST_ASSERT(incore_find(10)==NULL, "returns NULL if all in use");
+    incore_free_all();
+    test_inode=incore_find_free();
+    CTEST_ASSERT(incore_find(10)==test_inode, "returns first inode_num when refreed");
+}
+
 int main(){
     CTEST_VERBOSE(1);
 
@@ -127,6 +143,8 @@ int main(){
     test_image_close();
 
     test_incore_find_free();
+
+    test_incore_find();
 
     CTEST_RESULTS();
 
