@@ -20,7 +20,7 @@ void test_bread_bwrite(void){
     unsigned char block_map[BLOCK_SIZE]={1,1,1,1,1,1};
     bwrite(2,block_map);
     unsigned char buffer[BLOCK_SIZE]={0};
-    CTEST_ASSERT(*bread(2,buffer)==*block_map, "bwrite fills buffer with disk image and bread was successful");
+    CTEST_ASSERT(*bread(2,buffer)==*block_map, "bread fills buffer with successful write");
 }
 
 void test_alloc(void){
@@ -98,6 +98,17 @@ void test_ialloc(void){
     CTEST_ASSERT(chk1&&chk2&&chk3&&chk4, "ialloc arbitrary empty values verified");
 }
 
+void test_incore_find_free(void){
+    struct inode *test_inode=incore_find_free();
+    CTEST_ASSERT(incore_find_free()==test_inode, "returns struct inode pointer");
+    test_inode->ref_count=1;
+    CTEST_ASSERT(incore_find_free()!=test_inode, "does not return pointer to in use inode");
+    incore_all_used();
+    CTEST_ASSERT(incore_find_free()==NULL, "returns NULL when no free incore inodes remain");
+    incore_free_all();
+    CTEST_ASSERT(incore_find_free()==test_inode, "all_used and free_all working");
+}
+
 int main(){
     CTEST_VERBOSE(1);
 
@@ -114,6 +125,8 @@ int main(){
     test_alloc();
 
     test_image_close();
+
+    test_incore_find_free();
 
     CTEST_RESULTS();
 

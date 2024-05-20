@@ -32,6 +32,6 @@ It is partitioned into blocks of size 4096 bytes. These bytes are represented by
     `ialloc`: allocates and returns the index of the first free inode in the inode map
         `find_free`: finds the first 0 bit in an unsigned char array
         `set_free`: sets the designated index of an unsigned char array to the designated value
-    `alloc`:
+    `alloc`: allocates and returns the index of the first free block in the block map
 
 ## Notes
