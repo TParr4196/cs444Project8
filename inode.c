@@ -8,7 +8,18 @@
 #define BLOCK_SIZE 4096
 static struct inode incore[MAX_SYS_OPEN_FILES] = {0};
 
-int ialloc(void){
+void initialize_inode(struct inode *in){
+    //set incore inode to all 0's with inode_num as index found above
+    in->size=0, in->flags=0, in->link_count=0, in->owner_id=0, in->permissions=0,
+        in->ref_count=0;
+
+    //set block_ptr
+    for(int i = 0; i < INODE_PTR_COUNT; i++){
+        in->block_ptr[i]=0;
+    }
+}
+
+struct inode *ialloc(void){
     //get inode map
     unsigned char buffer[4096]={0};
     bread(1, buffer);
@@ -16,14 +27,22 @@ int ialloc(void){
     //find and set as used first available free inode
     int index=find_free(buffer);
     if (index<0)
-        return -1;
-    
-    set_free(buffer, index, 1);
+        return NULL;
 
+    //find and set an incore inode
+    struct inode *in = iget(index);
+    if(in == NULL){
+        return NULL;
+    }
+    
     //write new map back out to disk
+    set_free(buffer, index, 1);
     bwrite(1, buffer);
 
-    return index;
+    initialize_inode(in);
+    in->inode_num=index;
+
+    return in;
 }
 
 struct inode *incore_find_free(void){
@@ -98,4 +117,30 @@ void write_inode(struct inode *in){
         write_u16(block + block_offset_bytes + BLOCK_POINTER_0 + i * BLOCK_POINTER_NUMBER, in->block_ptr[i]);
     }
     bwrite(block_num, block);
+}
+
+struct inode *iget(int inode_num){
+    struct inode *in = incore_find(inode_num);
+    if(in!=NULL){
+        in->ref_count++;
+        return in;
+    }
+    in=incore_find_free();
+    if(in!=NULL){
+        read_inode(in, inode_num);
+        in->ref_count++;
+        in->inode_num=inode_num;
+        return in;
+    }
+    return NULL;
+}
+
+void iput(struct inode *in){
+    if(in->ref_count==0){
+        return;
+    }
+    in->ref_count--;
+    if(in->ref_count==0){
+        write_inode(in);
+    }
 }

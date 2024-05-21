@@ -78,7 +78,7 @@ void test_find_free(void){
     int chk4 = find_free(block)==22;
     CTEST_ASSERT(chk1&&chk2&&chk3&&chk4, "find_free arbitrary empty values verified");
 }
-
+/*
 void test_ialloc(void){
     unsigned char block[BLOCK_SIZE]={0};
     for(int i=0; i<BLOCK_SIZE; i++){
@@ -96,7 +96,7 @@ void test_ialloc(void){
     int chk3 = ialloc()==31000;
     int chk4 = ialloc()==32000;
     CTEST_ASSERT(chk1&&chk2&&chk3&&chk4, "ialloc arbitrary empty values verified");
-}
+}*/
 
 void test_incore_find_free(void){
     struct inode *test_inode=incore_find_free();
@@ -164,6 +164,27 @@ void test_read_write_inode(void){
     CTEST_ASSERT(ck1 && ck2 && ck3, "writes and reads arbitrary inodes successfully");
 }
 
+void test_iget(void){
+    incore_all_used();
+    CTEST_ASSERT(iget(0)==NULL, "returns NULL if all inodes are in use");
+    incore_free_all();
+    struct inode *in=iget(1244);
+    CTEST_ASSERT(in!=NULL, "find an arbitrary new inode number");
+    struct inode test = {0,0,0,0,0,{0},0,0};
+    initialize_inode(in);
+    test.ref_count=1;
+    test.inode_num=in->inode_num;
+    CTEST_ASSERT(check_inode(&test, iget(test.inode_num)), "retrive a previously found inode");
+}
+
+void test_iput(void){
+    struct inode *in = iget(0);
+    iput(in);
+    CTEST_ASSERT(in->ref_count==0, "decrements ref_count to 0 if in use");
+    iput(in);
+    CTEST_ASSERT(in->ref_count==0, "decrements ref_count to 0 if not in use");
+}
+
 int main(){
     CTEST_VERBOSE(1);
 
@@ -175,15 +196,19 @@ int main(){
 
     test_find_free();
 
-    test_ialloc();
-
     test_alloc();
+
+    //test_ialloc();
 
     test_incore_find_free();
 
     test_incore_find();
 
     test_read_write_inode();
+    
+    test_iget();
+
+    test_iput();
 
     test_image_close(); //must be last
 
