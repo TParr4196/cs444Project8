@@ -78,25 +78,50 @@ void test_find_free(void){
     int chk4 = find_free(block)==22;
     CTEST_ASSERT(chk1&&chk2&&chk3&&chk4, "find_free arbitrary empty values verified");
 }
-/*
+
+//check if two inodes have the same values
+int check_inode(struct inode *a, struct inode *b){
+    //check all unsigned ints, shorts, and chars
+    int ck1 = a->size == b->size && a->owner_id == b->owner_id &&
+        a->permissions == b->permissions && a->flags == b->flags && 
+        a->link_count == b->link_count && a->ref_count == b->ref_count && a->inode_num == b->inode_num;
+
+    //check block_ptr
+    for(int i = 0; i < INODE_PTR_COUNT; i++){
+        if(a->block_ptr[i] != b->block_ptr[i]){
+            return 0;
+        }
+    }
+
+    return ck1;
+}
+
 void test_ialloc(void){
     unsigned char block[BLOCK_SIZE]={0};
     for(int i=0; i<BLOCK_SIZE; i++){
         block[i]=0xff;
     }
     bwrite(1, block);
-    CTEST_ASSERT(ialloc()==-1, "returns -1 if inode map is full");
+    CTEST_ASSERT(ialloc()==NULL, "returns -1 if inode map is full");
     set_free(block, 30000, 0);
     set_free(block, 30500, 0);
     set_free(block, 31000, 0);
     set_free(block, 32000, 0);
     bwrite(1, block);
-    int chk1 = ialloc()==30000;
-    int chk2 = ialloc()==30500;
-    int chk3 = ialloc()==31000;
-    int chk4 = ialloc()==32000;
-    CTEST_ASSERT(chk1&&chk2&&chk3&&chk4, "ialloc arbitrary empty values verified");
-}*/
+    struct inode *in;
+    in=ialloc();
+    int chk1 = in->inode_num==30000;
+    in=ialloc();
+    int chk2 = in->inode_num==30500;
+    in=ialloc();
+    int chk3 = in->inode_num==31000;
+    in=ialloc();
+    int chk4 = in->inode_num==32000;
+    struct inode test={0,0,0,0,0,{0},0,0};
+    test.inode_num=32000;
+    int chk5 = check_inode(&test, in);
+    CTEST_ASSERT(chk1&&chk2&&chk3&&chk4&&chk5, "ialloc arbitrary empty values verified");
+}
 
 void test_incore_find_free(void){
     struct inode *test_inode=incore_find_free();
@@ -123,23 +148,6 @@ void test_incore_find(void){
     incore_free_all();
     test_inode=incore_find_free();
     CTEST_ASSERT(incore_find(10)==test_inode, "returns first inode_num when refreed");
-}
-
-//check if two inodes have the same values
-int check_inode(struct inode *a, struct inode *b){
-    //check all unsigned ints, shorts, and chars
-    int ck1 = a->size == b->size && a->owner_id == b->owner_id &&
-        a->permissions == b->permissions && a->flags == b->flags && 
-        a->link_count == b->link_count && a->ref_count == b->ref_count && a->inode_num == b->inode_num;
-
-    //check block_ptr
-    for(int i = 0; i < INODE_PTR_COUNT; i++){
-        if(a->block_ptr[i] != b->block_ptr[i]){
-            return 0;
-        }
-    }
-
-    return ck1;
 }
 
 //I wanted to test them independently, but I couldn't think of a way to do that other than
@@ -198,7 +206,7 @@ int main(){
 
     test_alloc();
 
-    //test_ialloc();
+    test_ialloc();
 
     test_incore_find_free();
 
