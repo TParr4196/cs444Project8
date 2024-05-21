@@ -125,6 +125,45 @@ void test_incore_find(void){
     CTEST_ASSERT(incore_find(10)==test_inode, "returns first inode_num when refreed");
 }
 
+//check if two inodes have the same values
+int check_inode(struct inode *a, struct inode *b){
+    //check all unsigned ints, shorts, and chars
+    int ck1 = a->size == b->size && a->owner_id == b->owner_id &&
+        a->permissions == b->permissions && a->flags == b->flags && 
+        a->link_count == b->link_count && a->ref_count == b->ref_count && a->inode_num == b->inode_num;
+
+    //check block_ptr
+    for(int i = 0; i < INODE_PTR_COUNT; i++){
+        if(a->block_ptr[i] != b->block_ptr[i]){
+            return 0;
+        }
+    }
+
+    return ck1;
+}
+
+//I wanted to test them independently, but I couldn't think of a way to do that other than
+//effectively rewriting the write_inode code for an individual inode in the test code
+void test_read_write_inode(void){
+    unsigned char block[BLOCK_SIZE]={0};
+    bwrite(INODE_FIRST_BLOCK, block);
+    struct inode in = {0,0,0,0,0,{0},0,0};
+    struct inode test = {0,0,0,0,0,{0},0,0};
+    read_inode(&test, 0);
+    int ck1 = check_inode(&test, &in);
+    in.size=1235231, in.flags='3', in.link_count=123;
+    write_inode(&in);
+    read_inode(&test,0);
+    int ck2 = check_inode(&test, &in);
+    unsigned short owner_id = (unsigned short) 12351235;
+    unsigned short arbitrary = (unsigned short) 112451235;
+    in.owner_id=owner_id, in.permissions='6', in.block_ptr[4]=arbitrary, in.inode_num=17;
+    write_inode(&in);
+    read_inode(&test, 17);
+    int ck3 = check_inode(&test, &in);
+    CTEST_ASSERT(ck1 && ck2 && ck3, "writes and reads arbitrary inodes successfully");
+}
+
 int main(){
     CTEST_VERBOSE(1);
 
@@ -140,11 +179,13 @@ int main(){
 
     test_alloc();
 
-    test_image_close();
-
     test_incore_find_free();
 
     test_incore_find();
+
+    test_read_write_inode();
+
+    test_image_close(); //must be last
 
     CTEST_RESULTS();
 
