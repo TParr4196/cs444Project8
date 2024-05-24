@@ -84,7 +84,8 @@ int directory_get(struct directory *dir, struct directory_entry *ent){
 }
 
 void directory_close(struct directory *d){
-    (void)d;
+    iput(d->inode);
+    free(d);
 }
 
 void ls(void){
