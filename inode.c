@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #define BLOCK_SIZE 4096
+#define INODE_MAP 1
 static struct inode incore[MAX_SYS_OPEN_FILES] = {0};
 
 void initialize_inode(struct inode *in){
@@ -22,7 +23,7 @@ void initialize_inode(struct inode *in){
 struct inode *ialloc(void){
     //get inode map
     unsigned char buffer[4096]={0};
-    bread(1, buffer);
+    bread(INODE_MAP, buffer);
 
     //find and set as used first available free inode
     int index=find_free(buffer);
@@ -45,6 +46,7 @@ struct inode *ialloc(void){
     return in;
 }
 
+//find an incore struct inode that is not in use
 struct inode *incore_find_free(void){
     for(int i=0; i<MAX_SYS_OPEN_FILES; i++){
         if(incore[i].ref_count==0){
@@ -54,6 +56,8 @@ struct inode *incore_find_free(void){
     return NULL;
 }
 
+
+//find an incore struct inode by inode_num
 struct inode *incore_find(unsigned int inode_num){
     for(int i=0; i<MAX_SYS_OPEN_FILES; i++){
         if(incore[i].ref_count == 0 && incore[i].inode_num==inode_num){
@@ -63,12 +67,14 @@ struct inode *incore_find(unsigned int inode_num){
     return NULL;
 }
 
+//for testing
 void incore_free_all(void){
     for(int i=0; i<MAX_SYS_OPEN_FILES; i++){
         incore[i].ref_count=0;
     }
 }
 
+//for testing
 void incore_all_used(void){
     for(int i=0; i<MAX_SYS_OPEN_FILES; i++){
         incore[i].ref_count=1;
@@ -120,11 +126,13 @@ void write_inode(struct inode *in){
 }
 
 struct inode *iget(int inode_num){
+    //return a previously used incore struct inode if it exists
     struct inode *in = incore_find(inode_num);
     if(in!=NULL){
         in->ref_count++;
         return in;
     }
+    //else reassign an unused incore struct inode if one exists
     in=incore_find_free();
     if(in!=NULL){
         read_inode(in, inode_num);
@@ -136,6 +144,7 @@ struct inode *iget(int inode_num){
 }
 
 void iput(struct inode *in){
+    //mark a struct inode as not in use
     if(in->ref_count==0){
         return;
     }

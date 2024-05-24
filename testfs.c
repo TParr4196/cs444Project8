@@ -194,6 +194,14 @@ void test_iput(void){
     CTEST_ASSERT(in->ref_count==0, "decrements ref_count to 0 if not in use");
 }
 
+//void test_mkfs(void){}
+
+//void test_directory_open(void){}
+
+//void test_directory_get(void){}
+
+//void test_directory_close(void){}
+
 int main(){
     CTEST_VERBOSE(1);
 
@@ -219,6 +227,14 @@ int main(){
 
     test_iput();
 
+    //test_mkfs();
+
+    //test_directory_open();
+
+    //test_directory_get();
+
+    //test_directory_close();
+
     test_image_close(); //must be last
 
     CTEST_RESULTS();
@@ -232,25 +248,7 @@ int main(){
 
     image_open("image.txt",0);
 
-    //initialize an empty data block
-    unsigned char block[4096]={0};
-    for(int i=0; i<BLOCK_SIZE; i++){
-        block[i]=0x0;
-    }
-
-    //not sure what goes in the superblock so giving it empty block
-    bread(0,block); //superblock
-    bread(1,block); //inode_map
-    bread(3,block); //inode_data_block_0
-    bread(4,block); //inode_data_block_1
-    bread(5,block); //inode_data_block_2
-    bread(6,block); //inode_data_block_3
-
-    for(int i=0; i<7; i++){
-        set_free(block, i,1);
-    }
-
-    bread(2,block); //block_map
+    mkfs();
     
     image_close();
 }
