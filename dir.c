@@ -5,6 +5,7 @@
 #include "free.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 //constants to define metadata
 #define BLOCK_SIZE 4096
@@ -49,7 +50,7 @@ void mkfs(void){
     //initialize inode data
     in->size=2*DIRECTORY_SIZE; //directory contains itself and parent directory, which for root directory is itself again
     in->owner_id=0; //no users yet?
-    in->permissions=RWX; //r 4 w 2 x 1
+    in->permissions=7; //r 4 w 2 x 1
     in->flags=DIRECTORY; //marks as directory
     in->link_count=1; //only link to root directory is itself
     in->block_ptr[0]=*block;
@@ -64,8 +65,16 @@ void mkfs(void){
 }
 
 struct directory *directory_open(int inode_num){
-    (void)inode_num;
-    return NULL;
+    //initialize location in memory
+    struct directory *dir=(struct directory*)malloc(sizeof(struct directory));
+    dir->inode=iget(inode_num);
+    if(dir->inode==NULL){
+        //return NULL if there is no availability for inode_num
+        return NULL;
+    }
+    //measures how far into the directory we have read
+    dir->offset=0;
+    return dir;
 }
 
 int directory_get(struct directory *dir, struct directory_entry *ent){
