@@ -197,11 +197,8 @@ void test_iput(void){
     CTEST_ASSERT(in->ref_count==0, "decrements ref_count to 0 if not in use");
 }
 
-void test_mkfs(void){
-    mkfs();
-    CTEST_ASSERT(alloc()==8, "block map initialized correctly");
-    struct inode *in = iget(0);
-    int chk = 1;
+int check_root_directory_inode(struct inode *in){
+    int chk=1;
     if(in->size != 64 || in->owner_id != 0 || in->permissions != 7 || in->flags != 2|| in->link_count!=1)
         chk = 0;
     if(read_u16(in->block_ptr)!=(unsigned int)in->inode_num ||
@@ -213,14 +210,28 @@ void test_mkfs(void){
     if(!strcmp(".", &file_name) || !strcmp("..", &file_name_2) ){
         chk=0;
     }
-    CTEST_ASSERT(chk, "inode 0 allocated to correctly represent parent directory");
+    return chk;
 }
 
-//void test_directory_open(void){}
+void test_mkfs(void){
+    mkfs();
+    CTEST_ASSERT(alloc()==8, "block map initialized correctly");
+    struct inode *in= iget(0);
+    CTEST_ASSERT(check_root_directory_inode(in), "inode 0 allocated to correctly represent parent directory");
+    iput(in);
+}
 
-//void test_directory_get(void){}
-
-//void test_directory_close(void){}
+//testing all three together to help prevent loose malloc'd pointers
+void test_directory_open_get_close(void){
+    struct directory *dir=directory_open(0);
+    CTEST_ASSERT(check_root_directory_inode(dir->inode), "directory_open(0) returns struct directory pointer with parent directory inode");
+    CTEST_ASSERT(dir->offset==0, "directory_open sets offset to 0");
+    directory_close(dir);
+    CTEST_ASSERT(check_root_directory_inode(iget(0)), "directory_close marks directory inode as free");
+    incore_all_used();
+    CTEST_ASSERT(directory_open(0)==NULL, "directory_open returns NULL if iget fails");
+    incore_free_all();
+}
 
 int main(){
     CTEST_VERBOSE(1);
@@ -249,11 +260,7 @@ int main(){
 
     test_mkfs();
 
-    //test_directory_open();
-
-    //test_directory_get();
-
-    //test_directory_close();
+    test_directory_open_get_close();
 
     test_image_close(); //must be last
 
