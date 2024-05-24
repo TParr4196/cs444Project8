@@ -13,7 +13,7 @@ testfs: libvvsfs.a
 test: testfs
 	./testfs
 
-libvvsfs.a: block.o image.o free.o testfs.o inode.o pack.o
+libvvsfs.a: block.o image.o free.o testfs.o pack.o dir.o inode.o
 	ar rcs $@ $^
 
 %.o: %.c

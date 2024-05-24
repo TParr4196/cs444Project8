@@ -1,8 +1,9 @@
 #include "image.h"
 #include "block.h"
 #include "free.h"
-#include "inode.c"
+#include "inode.h"
 #include "ctest.h"
+#include "dir.h"
 
 #ifdef CTEST_ENABLE
 
