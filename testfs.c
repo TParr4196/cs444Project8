@@ -10,6 +10,7 @@
 #ifdef CTEST_ENABLE
 
 #define BLOCK_SIZE 4096
+#define BLOCK_MAP 2
 #define INODE_NUM_SIZE 2
 
 void test_image_open(void){
@@ -215,7 +216,7 @@ int check_root_directory_inode(struct inode *in){
 
 void test_mkfs(void){
     mkfs();
-    CTEST_ASSERT(alloc()==8, "block map initialized correctly");
+    CTEST_ASSERT(alloc()==4, "block map initialized correctly");
     struct inode *in= iget(0);
     CTEST_ASSERT(check_root_directory_inode(in), "inode 0 allocated to correctly represent parent directory");
     iput(in);
@@ -226,6 +227,12 @@ void test_directory_open_get_close(void){
     struct directory *dir=directory_open(0);
     CTEST_ASSERT(check_root_directory_inode(dir->inode), "directory_open(0) returns struct directory pointer with parent directory inode");
     CTEST_ASSERT(dir->offset==0, "directory_open sets offset to 0");
+    struct directory_entry *ent=(struct directory_entry*)malloc(sizeof(struct directory_entry));
+    CTEST_ASSERT(directory_get(dir, ent)==0, "directory_get returns 0 on success");
+    CTEST_ASSERT(ent->inode_num==0&&strcmp(".", ent->name), "dictionary_get gets . directory from root directory");
+    directory_get(dir, ent);
+    CTEST_ASSERT(ent->inode_num==0&&strcmp("..", ent->name), "dictionary_get gets .. directory from root directory as second entry");
+    CTEST_ASSERT(directory_get(dir, ent)==-1, "directory_get returns -1 after directory fully traversed");
     directory_close(dir);
     CTEST_ASSERT(check_root_directory_inode(iget(0)), "directory_close marks directory inode as free");
     incore_all_used();

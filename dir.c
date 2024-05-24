@@ -13,9 +13,6 @@
 #define INODE_MAP 1
 #define BLOCK_MAP 2
 #define INODE_DATA_BLOCK_0 3
-#define INODE_DATA_BLOCK_1 4
-#define INODE_DATA_BLOCK_2 5
-#define INODE_DATA_BLOCK_3 6
 #define DIRECTORY_SIZE 32
 #define INODE_NUM_SIZE 2
 #define RWX 7
@@ -27,21 +24,17 @@ void mkfs(void){
     for(int i=0; i<BLOCK_SIZE; i++){
         block[i]=0x0;
     }
-    for(int i=0; i<7; i++){
+    for(int i=0; i<3; i++){
         set_free(block, i, 1);
     }
     bwrite(BLOCK_MAP,block);
-    for(int i=0; i<7; i++){
+    for(int i=0; i<31; i++){
         set_free(block, i, 0);
     }
 
     //not sure what goes in the superblock so giving it empty block
     bwrite(SUPERBLOCK, block); 
     bwrite(INODE_MAP, block);
-    bwrite(INODE_DATA_BLOCK_0, block);
-    bwrite(INODE_DATA_BLOCK_1, block);
-    bwrite(INODE_DATA_BLOCK_2, block);
-    bwrite(INODE_DATA_BLOCK_3, block);
 
     struct inode *in = ialloc();
     int block_index = alloc();
@@ -72,14 +65,26 @@ struct directory *directory_open(int inode_num){
         //return NULL if there is no availability for inode_num
         return NULL;
     }
-    //measures how far into the directory we have read
+    //offset measures how far into the directory we have read
     dir->offset=0;
     return dir;
 }
 
 int directory_get(struct directory *dir, struct directory_entry *ent){
-    (void)dir;
-    (void)ent;
+    //return -1 if the directory has been fully read
+    if(dir->offset>=dir->inode->size){
+        return -1;
+    }
+
+    //get the location in data block corresponding to the inode_num of dir
+    int data_block_index = dir->offset / BLOCK_SIZE;
+    int data_block_num = dir->inode->block_ptr[data_block_index];
+    unsigned char block[BLOCK_SIZE]={0};
+    bread(data_block_num+INODE_DATA_BLOCK_0, block);
+    int offset_in_block = dir->offset %BLOCK_SIZE;
+    ent->inode_num=read_u16(block+offset_in_block);
+    strcpy((char *)block+offset_in_block+INODE_NUM_SIZE, ent->name);
+    dir->offset+=DIRECTORY_SIZE;
     return 0;
 }
 
