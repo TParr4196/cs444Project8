@@ -17,6 +17,8 @@
 #define INODE_DATA_BLOCK_3 6
 #define DIRECTORY_SIZE 32
 #define INODE_NUM_SIZE 2
+#define RWX 7
+#define DIRECTORY 2
 
 void mkfs(void){
     //initialize basic metadeta
@@ -47,8 +49,8 @@ void mkfs(void){
     //initialize inode data
     in->size=2*DIRECTORY_SIZE; //directory contains itself and parent directory, which for root directory is itself again
     in->owner_id=0; //no users yet?
-    in->permissions=7; //r 4 w 2 x 1
-    in->flags=2; //marks as directory
+    in->permissions=RWX; //r 4 w 2 x 1
+    in->flags=DIRECTORY; //marks as directory
     in->link_count=1; //only link to root directory is itself
     in->block_ptr[0]=*block;
 

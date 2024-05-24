@@ -4,10 +4,13 @@
 #include "inode.h"
 #include "ctest.h"
 #include "dir.h"
+#include "pack.h"
+#include <string.h>
 
 #ifdef CTEST_ENABLE
 
 #define BLOCK_SIZE 4096
+#define INODE_NUM_SIZE 2
 
 void test_image_open(void){
     CTEST_ASSERT(image_open("image.txt",0)>=0, "image_open returns file descriptor");
@@ -194,7 +197,24 @@ void test_iput(void){
     CTEST_ASSERT(in->ref_count==0, "decrements ref_count to 0 if not in use");
 }
 
-//void test_mkfs(void){}
+void test_mkfs(void){
+    mkfs();
+    CTEST_ASSERT(alloc()==8, "block map initialized correctly");
+    struct inode *in = iget(0);
+    int chk = 1;
+    if(in->size != 64 || in->owner_id != 0 || in->permissions != 7 || in->flags != 2|| in->link_count!=1)
+        chk = 0;
+    if(read_u16(in->block_ptr)!=(unsigned int)in->inode_num ||
+        read_u16(in->block_ptr+32)!=(unsigned int)in->inode_num){
+        chk=0;
+    }
+    char file_name=(char)read_u8(in->block_ptr+INODE_NUM_SIZE);
+    char file_name_2=(char)read_u8(in->block_ptr+2+INODE_NUM_SIZE);
+    if(!strcmp(".", &file_name) || !strcmp("..", &file_name_2) ){
+        chk=0;
+    }
+    CTEST_ASSERT(chk, "inode 0 allocated to correctly represent parent directory");
+}
 
 //void test_directory_open(void){}
 
@@ -227,7 +247,7 @@ int main(){
 
     test_iput();
 
-    //test_mkfs();
+    test_mkfs();
 
     //test_directory_open();
 
